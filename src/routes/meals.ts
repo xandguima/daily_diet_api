@@ -28,16 +28,19 @@ export async function mealsRoutes(app: FastifyInstance) {
         return reply.status(400).send({ error: 'Invalid date format' })
       }
 
-      await knex('meals').insert({
-        id: crypto.randomUUID(),
-        name,
-        description,
-        date: parsedDate.toISOString(),
-        isInDiet,
-        user_id: userId,
-      })
+      const [{ id }] = await knex('meals')
+        .insert({
+          id: crypto.randomUUID(),
+          name,
+          description,
+          date: parsedDate.toISOString(),
+          isInDiet,
+          user_id: userId,
+        })
+        .returning('id')
       reply.status(201).send({
         messege: 'Refeição criada com sucesso',
+        id,
       })
     },
   )
@@ -52,7 +55,7 @@ export async function mealsRoutes(app: FastifyInstance) {
       const meals = await knex('meals').where({
         user_id: userId,
       })
-      reply.status(201).send({ meals })
+      reply.status(200).send({ meals })
     },
   )
   app.get(
@@ -79,7 +82,7 @@ export async function mealsRoutes(app: FastifyInstance) {
       if (!meal) {
         return reply.status(404).send({ error: 'Refeição não encontrada' })
       }
-      reply.status(201).send({ meal })
+      reply.status(200).send({ meal })
     },
   )
   app.put(
@@ -128,7 +131,7 @@ export async function mealsRoutes(app: FastifyInstance) {
             user_id: userId,
           })
 
-        reply.status(201).send('Refeição atualizada com sucesso')
+        reply.status(200).send({ messege: 'Refeição atualizada com sucesso' })
       } catch (error) {
         console.log('Erro ao atualizar refeição: ', error)
         reply.status(500).send({ error: 'Internal server error' })
@@ -142,7 +145,7 @@ export async function mealsRoutes(app: FastifyInstance) {
     const { id } = deleteMealParamsSchema.parse(request.params)
     try {
       await knex('meals').where({ id }).delete()
-      reply.status(201).send('Refeição deletada com sucesso')
+      reply.status(200).send({ messege: 'Refeição deletada com sucesso' })
     } catch (error) {
       console.log('Erro ao deletar refeição: ', error)
       reply.status(500).send({ error: 'Internal server error' })
@@ -178,7 +181,7 @@ export async function mealsRoutes(app: FastifyInstance) {
           }
         }
 
-        reply.status(201).send({
+        reply.status(200).send({
           amountMeals,
           amountMealsInDiet,
           amountMealsOutDiet,

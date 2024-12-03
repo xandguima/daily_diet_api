@@ -44,8 +44,9 @@ export async function usersRoutes(app: FastifyInstance) {
       const userId = usuario?.id
 
       if (!usuario) {
-        console.log('Usuário não encontrado')
-        return false
+        return reply.status(401).send({
+          messege: 'Usuário ou senha incorretos',
+        })
       }
 
       const senhaValida = await bcrypt.compare(password, usuario.password)
@@ -55,6 +56,7 @@ export async function usersRoutes(app: FastifyInstance) {
 
         const token = JSON.stringify({ session, userId })
 
+        // Certifique-se de que o cookie está sendo configurado corretamente
         reply.cookie('token', token, {
           path: '/',
           maxAge: 60 * 60 * 24 * 7, // 7 dias
@@ -63,17 +65,16 @@ export async function usersRoutes(app: FastifyInstance) {
           sameSite: 'strict',
         })
 
-        console.log('Login bem-sucedido')
-        return reply.status(201).send({
+        return reply.status(200).send({
           messege: 'Login bem-sucedido',
         })
       } else {
-        console.log('Senha incorreta')
-        return 'Senha incorreta'
+        return reply.status(401).send({
+          messege: 'Usuário ou senha incorretos',
+        })
       }
     } catch (error) {
-      console.error('Erro ao validar usuário:', error)
-      return false
+      throw new Error('Error on login' + error)
     }
   })
 }
